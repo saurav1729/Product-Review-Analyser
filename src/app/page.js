@@ -11,7 +11,7 @@ import { Switch } from "../components/ui/switch"
 import { GoogleGenerativeAI } from "@google/generative-ai"
 
 const sentiment = new Sentiment()
-const apiKey = "AIzaSyAehf8XG09Eu9pbGbkObI2gfHCJcxcT4Wwgit";
+const apiKey = "AIzaSyAehf8XG09Eu9pbGbkObI2gfHCJcxcT4Ww";
 
 console.log("api key is :",apiKey);
 const genAI = new GoogleGenerativeAI(apiKey)
