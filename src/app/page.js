@@ -182,7 +182,7 @@ export default function SentimentAnalyzer() {
               <AlertDescription>
                 <p className="text-lg mb-4">{summary.text}</p>
                 <div className="space-y-2">
-                  <p className="font-semibold text-lg bg-gradient-to-r from-blue-500 to-purple-500 text-transparent bg-clip-text">Sentiment Analysis:</p>
+                 {(summary.positiveWords.length>0||summary.positiveWords.length>0) && <p className="font-semibold text-lg bg-gradient-to-r from-blue-500 to-purple-500 text-transparent bg-clip-text">Sentiment Analysis:</p>}
                   {summary.positiveWords.length > 0 && (
                     <p className="font-medium">
                       Positive aspects: {' '}
