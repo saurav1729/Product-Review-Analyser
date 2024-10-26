@@ -3,19 +3,22 @@
 import React, { useState, useEffect } from 'react'
 import { Loader2, Sun, Moon, ThumbsUp, ThumbsDown } from "lucide-react"
 import Sentiment from 'sentiment'
-import { Button } from "../components/ui/button"
-import { Textarea } from "../components/ui/textarea"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "../components/ui/card"
-import { Alert, AlertDescription, AlertTitle } from "../components/ui/alert"
-import { Switch } from "../components/ui/switch"
+import { Button } from "@/components/ui/button"
+import { Textarea } from "@/components/ui/textarea"
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { Switch } from "@/components/ui/switch"
 import { GoogleGenerativeAI } from "@google/generative-ai"
 
 const sentiment = new Sentiment()
 const apiKey = "AIzaSyAehf8XG09Eu9pbGbkObI2gfHCJcxcT4Ww";
 
-console.log("api key is :",apiKey);
+if (!apiKey) {
+  console.error("Google API key is not set. Please set the NEXT_PUBLIC_GOOGLE_API_KEY environment variable.")
+}
+
 const genAI = new GoogleGenerativeAI(apiKey)
-const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" })
+const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" })
 
 const generationConfig = {
   temperature: 0.7,
@@ -24,7 +27,7 @@ const generationConfig = {
   maxOutputTokens: 1024,
 }
 
-const SentimentAnalyzer = () => {
+export default function SentimentAnalyzer() {
   const [review, setReview] = useState('')
   const [summary, setSummary] = useState(null)
   const [isLoading, setIsLoading] = useState(false)
@@ -49,6 +52,7 @@ const SentimentAnalyzer = () => {
         
         Provide a response in the following JSON format:
         {
+          "overallSentiment": "One word sentiment: POSITIVE, NEGATIVE, or NEUTRAL",
           "summary": "A 2-3 sentence summary of the review, focusing on the main points and overall sentiment",
           "positiveWords": ["list", "of", "positive", "words", "or", "phrases"],
           "negativeWords": ["list", "of", "negative", "words", "or", "phrases"]
@@ -75,7 +79,7 @@ const SentimentAnalyzer = () => {
 
       setSummary({
         text: aiResponse.summary,
-        score: sentimentResult.score,
+        score: aiResponse.overallSentiment,
         positiveWords: aiResponse.positiveWords,
         negativeWords: aiResponse.negativeWords,
       })
@@ -87,7 +91,7 @@ const SentimentAnalyzer = () => {
   }
 
   const handleKeyDown = (e) => {
-    if (e.key === 'Enter' && !isLoading && review.trim()) {
+    if (e.key === 'Enter' && e.ctrlKey && !isLoading && review.trim()) {
       summarizeReview()
     }
   }
@@ -95,8 +99,14 @@ const SentimentAnalyzer = () => {
   const handleChange = (e) => {
     setReview(e.target.value)
     if (e.target.value.trim() === '') {
-      setSummary(null) // Clear the summary when the text area is cleared
+      setSummary(null) 
     }
+  }
+
+  const getSentimentColor = (score) => {
+    if (score === 'POSITIVE') return 'green'
+    if (score === 'NEGATIVE') return 'red'
+    return 'yellow'
   }
 
   return (
@@ -130,7 +140,7 @@ const SentimentAnalyzer = () => {
             value={review}
             onChange={handleChange}
             onKeyDown={handleKeyDown}
-            placeholder="Enter your product review here"
+            placeholder="Enter your product review here (Press Ctrl+Enter to analyze)"
             className={`min-h-[100px] ${isDarkMode ? 'bg-gray-700/50 placeholder-gray-400 text-white' : 'bg-white/50 placeholder-gray-500 text-gray-800'}`}
           />
           {error && (
@@ -140,17 +150,35 @@ const SentimentAnalyzer = () => {
             </Alert>
           )}
           {summary && (
-            <Alert variant="default" className={isDarkMode ? 'bg-gray-700 text-white' : ''}>
-              <AlertTitle className="flex items-center space-x-2 mb-2">
-                <span className="text-xl font-bold bg-gradient-to-r from-blue-500 to-purple-500 text-transparent bg-clip-text">
-                  AI Summary
-                </span>
-                {summary.score > 0 ? (
-                  <ThumbsUp className="h-5 w-5 text-green-500" />
-                ) : summary.score < 0 ? (
-                  <ThumbsDown className="h-5 w-5 text-red-500" />
-                ) : null}
-              </AlertTitle>
+            <Alert 
+              variant="default" 
+              className={`
+                ${isDarkMode ? 'bg-gray-700 text-white' : 'bg-white text-gray-800'}
+                border-2 transition-colors duration-300
+                ${summary.score === "POSITIVE" ? 'border-green-500' : summary.score === 'NEGATIVE' ? 'border-red-500' : 'border-yellow-500'}
+              `}
+            >
+              <div className='flex justify-between'>
+                <AlertTitle className="flex items-center space-x-2 mb-2">
+                  <span className="text-xl font-bold bg-gradient-to-r from-blue-500 to-purple-500 text-transparent bg-clip-text">
+                    AI Summary
+                  </span>
+                </AlertTitle>
+                <AlertTitle className="flex items-center space-x-2 mb-2">
+                  <div className="flex items-center">
+                    <span className={`mr-2 font-semibold text-${getSentimentColor(summary.score)}-500`}>
+                      {summary.score}
+                    </span>
+                    {summary.score === 'POSITIVE' ? (
+                      <ThumbsUp className="h-5 w-5 text-green-500" />
+                    ) : summary.score === 'NEGATIVE' ? (
+                      <ThumbsDown className="h-5 w-5 text-red-500" />
+                    ) : (
+                      <span className="h-5 w-5 text-yellow-500">•</span>
+                    )}
+                  </div>
+                </AlertTitle>
+              </div>
               <AlertDescription>
                 <p className="text-lg mb-4">{summary.text}</p>
                 <div className="space-y-2">
@@ -189,5 +217,3 @@ const SentimentAnalyzer = () => {
     </div>
   )
 }
-
-export default SentimentAnalyzer
